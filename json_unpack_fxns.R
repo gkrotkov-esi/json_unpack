@@ -28,13 +28,19 @@ get_item_comments <- function(item){
   return(item$comments)
 }
 
+# gets only the comment body of the item
+# designed to work with get_data_comments fxn
+get_item_comment_body <- function(item){
+  return(item$comments[[1]]$body)
+}
+
 # returns a list of all the comments in all the json objects
 get_data_comments <- function(data){
   result <- vector(mode = "list", length = length(data))
   for (i in 1:length(data)){
     # we suppress warnings since we're intentionally making a ragged list
     # (ragged meaning nonrectangular)
-    suppressWarnings(result[i] <- get_item_comments(data[[i]]))
+    suppressWarnings(result[i] <- get_item_comment_body(data[[i]]))
   }
   return(result)
 }

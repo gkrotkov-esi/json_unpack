@@ -8,6 +8,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
+source(json_unpack_fxns.R) # for some reason this line bugs the code
 library(rjson)
 library(RCurl)
 
@@ -36,6 +37,15 @@ comments <- item$comments
 ```
 
 @TODO update fxns to only read comment body
+
+
+```{r}
+filepath <- "data/full zendesk 042020.json"
+
+data <- load_data(filepath)
+data <- construct_data_frame(data)
+```
+
 
 
 making some changes to this file
