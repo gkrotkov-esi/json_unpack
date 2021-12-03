@@ -1,0 +1,41 @@
+---
+title: "tmp"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(rjson)
+library(RCurl)
+
+filepath <- "data/full zendesk 042020.json"
+
+data <- rjson::fromJSON(sprintf("[%s]", 
+                                paste(readLines(filepath),collapse=",")))
+```
+
+note - "full zendesk 012821.json" has more than 2^31-1 bytes and exceeds C's 
+memory limit, which is what the fromJSON fxn is implemented in.
+
+goal is to sort this into a 2 column dataframe: ticketID & comments
+
+First, let's sort the first item into ticketID and comments
+
+access token: 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
+
+```{r}
+item <- data[[1]]
+
+# well, id is easy enough to grab
+
+id <- item$id
+comments <- item$comments
+```
+
+@TODO update fxns to only read comment body
+
+
+making some changes to this file
