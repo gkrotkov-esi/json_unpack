@@ -54,6 +54,19 @@ get_comments <- function(data){
   return(result)
 }
 
+# retrieve org names, handling the NULL case
+get_org_name <- function(item, default_null = ""){
+  if(is.null(item$organization$name)){
+    return(default_null)
+  }
+  return(item$organization$name)
+}
+
+# return a vector of org names
+get_org_names <- function(data){
+  return(sapply(data, get_org_name))
+}
+
 #########################
 #### DF CONSTRUCTION ####
 #########################
@@ -82,6 +95,19 @@ construct_comments_data_frame <- function(data){
   # unlist comments so that the resulting df has a vector
   comments <- unlist_null_to_empty(comments)
   result$comments <- comments
+  return(result)
+}
+
+
+# the naming of this fxn is too janky for my tastes, we need a generic function
+# that said, it'll do for now.
+construct_comments_org_data_frame <- function(data){
+  ids <- get_ids(data)
+  result <- data.frame(id = ids)
+  comments <- get_comments(data)
+  comments <- unlist_null_to_empty(comments)
+  result$comments <- comments
+  result$org <- get_org_names(data)
   return(result)
 }
 

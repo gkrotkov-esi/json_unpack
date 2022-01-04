@@ -64,3 +64,20 @@ data <- construct_comments_data_frame(data)
 data.table::fwrite(data, "data/outputs/veros_output.csv")
 ```
 
+Exploring adding filtering by customer
+
+```{r}
+# only get US Cellular data
+source("json_unpack_fxns.R")
+load_libraries()
+
+filepath <- "data/veros_export.json"
+
+data <- load_data(filepath)
+data <- construct_comments_crg_data_frame(data)
+data <- data[data$org == "US Cellular", ]
+
+data.table::fwrite(data, "data/outputs/veros_output_v2.csv")
+
+```
+
