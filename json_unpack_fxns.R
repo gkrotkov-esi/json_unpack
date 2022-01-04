@@ -58,22 +58,40 @@ get_comments <- function(data){
 #### DF CONSTRUCTION ####
 #########################
 
+# assumes item is a list of length 1
+# unpacks the object in item, unless it is null
+# NULL values instead return default_null
+unpack_item <- function(item, default_null = ""){
+  unpacked <- item[[1]]
+  if(is.null(unpacked)){
+    unpacked <- default_null
+  }
+  return(unpacked)
+}
+
+# unlists a lists, but if an element is null uses a default value
+unlist_null_to_empty <- function(lst){
+  return(sapply(lst, unpack_item))
+}
+
 # construct a data frame from the json list including id and comments
 construct_comments_data_frame <- function(data){
   ids <- get_ids(data)
-  comments <- get_comments(data)
   result <- data.frame(id = ids)
+  comments <- get_comments(data)
+  # unlist comments so that the resulting df has a vector
+  comments <- unlist_null_to_empty(comments)
   result$comments <- comments
   return(result)
 }
-
 
 # generic data frame construction
 # we always get ids since those are the unique field.
 construct_data_frame <- function(data, fields = "comments"){
   ids <- get_ids(data)
-  
+  #@TODO
 }
+
 
 ################
 #### EXPORT ####

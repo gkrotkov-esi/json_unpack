@@ -56,13 +56,14 @@ write.csv(data, "veros_output.csv", row.names = TRUE)
 Vero's export:
 
 ```{r}
+source("json_unpack_fxns.R")
+load_libraries()
+
 filepath <- "data/veros_export.json"
 
 data <- load_data(filepath)
 data <- construct_comments_data_frame(data)
 
-# convert all NULL to empty
-
-data.table::fwrite(data, "data/veros_output.csv")
+data.table::fwrite(data, "data/outputs/veros_output.csv")
 ```
 
