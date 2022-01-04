@@ -89,9 +89,10 @@ construct_comments_data_frame <- function(data){
 # we always get ids since those are the unique field.
 construct_data_frame <- function(data, fields = "comments"){
   ids <- get_ids(data)
+  result <- data.frame(id = ids)
+  
   #@TODO
 }
-
 
 ################
 #### EXPORT ####

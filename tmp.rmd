@@ -39,9 +39,6 @@ id <- item$id
 comments <- item$comments
 ```
 
-@TODO update fxns to only read comment body
-
-
 Sample code for extracting ID and Comments
 
 ```{r}
