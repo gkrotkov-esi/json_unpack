@@ -8,11 +8,14 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
-source(json_unpack_fxns.R) # for some reason this line bugs the code
+source("json_unpack_fxns.R")
 library(rjson)
 library(RCurl)
+library(data.table)
 
-filepath <- "data/full zendesk 042020.json"
+# smallest file: "data/full zendesk 042020.json"
+
+filepath <- "data/veros_export.json"
 
 data <- rjson::fromJSON(sprintf("[%s]", 
                                 paste(readLines(filepath),collapse=",")))
@@ -39,13 +42,27 @@ comments <- item$comments
 @TODO update fxns to only read comment body
 
 
+Sample code for extracting ID and Comments
+
 ```{r}
 filepath <- "data/full zendesk 042020.json"
 
 data <- load_data(filepath)
-data <- construct_data_frame(data)
+data <- construct_comments_data_frame(data)
+
+write.csv(data, "veros_output.csv", row.names = TRUE)
 ```
 
+Vero's export:
 
+```{r}
+filepath <- "data/veros_export.json"
 
-making some changes to this file
+data <- load_data(filepath)
+data <- construct_comments_data_frame(data)
+
+# convert all NULL to empty
+
+data.table::fwrite(data, "data/veros_output.csv")
+```
+
