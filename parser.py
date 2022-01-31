@@ -2,62 +2,54 @@
 # Gabriel Krotkov
 # This script is intended to facilitate breaking .json files up into more 
 # managable chunks for another tool like R to import and analyze.
-# Getsize function adapted from Aaron Hall at
-# https://stackoverflow.com/questions/449560/how-do-i-determine-the-size-of-an-object-in-python
 # Last Update: 1/31/2022
 
-import module_manager
-module_manager.review()
 import os
 import sys
 import json
-import copy
-from types import ModuleType, FunctionType
-from gc import get_referents
+import pandas as pd
 
-# Custom objects know their class.
-# Function objects seem to know way too much, including modules.
-# Exclude modules as well.
-BLACKLIST = type, ModuleType, FunctionType
+##########################
+#### Helper Functions ####
+##########################
 
-def getsize(obj):
-    """sum size of object & members."""
-    if isinstance(obj, BLACKLIST):
-        raise TypeError('getsize() does not take argument of type: '+ str(type(obj)))
-    seen_ids = set()
-    size = 0
-    objects = [obj]
-    while objects:
-        need_referents = []
-        for obj in objects:
-            if not isinstance(obj, BLACKLIST) and id(obj) not in seen_ids:
-                seen_ids.add(id(obj))
-                size += sys.getsizeof(obj)
-                need_referents.append(obj)
-        objects = get_referents(*need_referents)
-    return size
+# ASSUMPTION: directory has no directories
+def clear_dir(dir):
+    for f in os.listdir(dir):
+        os.remove(os.path.join(dir, f))
 
-def cleanse_dir(filepath):
-    for f in os.listdir(filepath):
-        os.remove(os.path.join(filepath, f))
+# non-pandas line by line reading of a json line separated file in utf8 encoding
+# 
+def read_jl_lines(filepath):
+    file = open(filepath, "r", encoding = "utf8")
+    lines = []
+    for line in file:
+        lines.append(json.loads(line))
+    file.close()
 
-file = open("data/full zendesk 092020.json", "r", encoding = "utf8")
+#####################
+#### Driver Code ####
+#####################
 
-lines = []
-for line in file:
-    lines.append(json.loads(line))
+# The user must define how many splits they want in the data. 
+# The program will evenly divide the number of json objects in the input file
+# but will not account for varying size of json objects.
+splits = int(input("How many splits?"))
+message = "If you don't need to split the data, don't run this script."
+assert(splits > 1, message)
+filepath = "data/full zendesk 042020.json"
 
-total_size = getsize(lines)
+data = pd.read_json(filepath, lines=True)
 
-# Now we want to write to data/split, which is our directory for holding split
-# json files.
-# We should be guaranteed that data/split does not have any directories.
-# We first delete all the files in split
-cleanse_dir("data/split")
+clear_dir("data/splits")
 
-# Next we're interested in splitting the data into more managable chunks
-# This constant was taken from the size of a file that was successfully read
-# into R; size not by system measurement but by the getsize fxn above.
-CAP = 3900000000
-
-size_counter = 0
+# compute the length required for each of the split dataframes.
+# The mod solution presented here is not perfect but is only separated from 
+# perfect by (splits - 1) json objects, which is negligible on this scale.
+split_length = len(data) // splits
+for i in range(splits):
+    tmp = data[(split_length * i):(split_length * (i + 1))]
+    if (i == splits - 1): # if last iteration, take all the remaining data
+        tmp = data[(split_length * 1):]
+    target = f"data/splits/split{i + 1}.json"
+    tmp.to_json(target, orient = "records", force_ascii = False, lines = True)
