@@ -15,7 +15,7 @@ library(data.table)
 
 # smallest file: "data/full zendesk 042020.json"
 
-filepath <- "data/veros_export.json"
+filepath <- "data/full zendesk 092020.json"
 
 data <- rjson::fromJSON(sprintf("[%s]", 
                                 paste(readLines(filepath),collapse=",")))

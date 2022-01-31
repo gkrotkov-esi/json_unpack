@@ -124,9 +124,11 @@ construct_data_frame <- function(data, fields = "comments"){
 #### EXPORT ####
 ################
 
-fast_export <- function(data){
-  # first, detect all NULLS and convert to empty (fwrite can't handle NULL)
-  # @TODO
+# ASSUMPTION: all NULL fields have been converted to an appropriate non-NULL
+# representation
+# Uses fwrite to export to to_file
+fast_export <- function(data, to_file){
+  data.table::fwrite(data, to_file)
 }
 
 # @TODO only include comment body in comment column
