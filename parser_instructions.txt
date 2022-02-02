@@ -1,0 +1,24 @@
+Readme for parser.py
+
+Requirements: 
+1) install the pandas module
+    - pip install pandas in the command line is the easiest way to do this
+    - if this fails, run "module_manager.py" and it should give you instructions
+    that help (unless your namespace includes special character like ",")
+2) Setup the "data" folder
+    - In the directory with "parser.py" there should be another directory, 
+    named "data"
+    - Subfolders of "data" should include "data/parser_input" and 
+    "data/parser_output"
+        - To be clear, "/" is the classic indicator of a subfolder in linux, 
+        so "data/parser_output" means that there is a directory called 
+        "parser_output" in the directory "data"
+3) Input data
+    - Place the json folder you want parsed into "data/parser_input"
+
+Instructions to extract id and comments: 
+- Open "parser.py"
+- Run the file
+- (Optional) If you want to split the file as well: 
+    - In the terminal, run the file "split_data" with the inputs "data" and 
+    the number of files you want the json split into. 

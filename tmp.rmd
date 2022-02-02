@@ -74,10 +74,23 @@ load_libraries()
 filepath <- "data/veros_export.json"
 
 data <- load_data(filepath)
-data <- construct_comments_crg_data_frame(data)
+data <- construct_comments_org_data_frame(data)
 data <- data[data$org == "US Cellular", ]
 
 data.table::fwrite(data, "data/outputs/veros_output_v2.csv")
 
+```
+
+```{r}
+source("json_unpack_fxns.R")
+load_libraries()
+
+filepath <- "data/parser_input/export-2022-02-01.json"
+
+data <- load_data(filepath)
+data <- construct_comments_org_data_frame(data)
+data <- data[data$org == "US Cellular", ]
+
+data.table::fwrite(data, "data/outputs/zendesk_outputs_2022-02-01.csv")
 ```
 
