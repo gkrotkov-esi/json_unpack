@@ -13,6 +13,48 @@ import pandas as pd
 #### Helper Functions ####
 ##########################
 
+# Replicates the "which" inbuilt function from R
+def which(lst, condition = True):
+    idx = []
+    for i in range(len(lst)):
+        if lst[i] == condition:
+            idx.append(i)
+    return idx
+
+# dirpath - the path to the parser input directory
+def get_extensions(dirpath = "data/parser_input"):
+    files = os.listdir(dirpath)
+    extensions = []
+    for file in files:
+        extensions.append(file.split(".")[1])
+    return extensions
+
+# given a filepath, loads that file as a json into a pandas df
+def load_json(filepath):
+    return pd.read_json(filepath, lines = True)
+
+def load_csv(filepath):
+    return pd.read_csv(filepath)
+
+# can adjust these to loop through all files in parser_input?
+
+
+# gets the first .json file in the input directory
+def load_first_json(dirpath = "data/parser_input"):
+    extensions = get_extensions(dirpath)
+    files = os.listdir(dirpath)
+    idx = which(extensions, "json")
+    filepath = dirpath + "/" + files[idx[0]]
+    return load_json(filepath)
+
+# returns the first .csv file in the input directory
+def load_first_csv(dirpath = "data/parser_input"):
+    extensions = get_extensions(dirpath)
+    files = os.listdir(dirpath)
+    idx = which(extensions, "csv")
+    filepath = dirpath + "/" + files[idx[0]]
+    return load_csv(filepath)
+
 # ASSUMPTION: directory has no directories
 def clear_dir(dir):
     for f in os.listdir(dir):
@@ -46,7 +88,7 @@ def export(data, name = "output", target = None):
 # but will not account for varying size of json objects.
 def split_data(data, splits):
     clear_dir("data/parser_output")
-    assert(splits > 1, "Need splits > 1")
+    assert splits > 1, "called split_data without a valid # of splits"
     split_length = len(data) // splits
     # send split data to data/splits
     for i in range(splits):
@@ -66,10 +108,33 @@ def export_comments(data, splits = False):
     else:
         export(data, "comments")
 
+########################
+#### Test functions ####
+########################
+
+def test_which():
+    print("Testing function 'which'...", end = "")
+    assert(which([True, False]) == [0])
+    assert(which([1, 7, 1, 2], 1) == [0, 2])
+    assert(which([]) == [])
+    assert(which([1]) == [0])
+    print("passed!")
+
+def test_all():
+    test_which()
+
+def veros_operation():
+    data_json = load_first_json()
+    data_csv = load_first_csv()
+    # want to merge json and csv on id
+    export_comments(data)
+
+def main():
+    data = load_first_json()
+    export_comments(data)
+
 #####################
 #### Driver Code ####
 #####################
-# can adjust this to default to looping through all files in parser_input?
-filepath = "data/parser_input/" + os.listdir("data/parser_input")[0]
-data = pd.read_json(filepath, lines=True)
-export_comments(data)
+test_all()
+#main()
