@@ -14,7 +14,10 @@ Requirements:
         so "data/parser_output" means that there is a directory called 
         "parser_output" in the directory "data"
 3) Input data
-    - Place the json folder you want parsed into "data/parser_input"
+    - Place the json zendesk export with the comments you want parsed into 
+    "data/parser_input"
+    - Place the csv zendesk export with everything but the comments into 
+    "data/parser_input"
 
 Instructions to extract id and comments: 
 - Open "parser.py"
