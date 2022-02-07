@@ -108,7 +108,7 @@ def export_comments(data, splits = False):
     else:
         export(data, "comments")
 
-def veros_operation():
+def veros_operation(customer):
     data = load_first_json()
     tmp = load_first_csv()
     tmp = tmp.rename(columns = {"Id": "id", "Customer [list]": "customer"})
@@ -117,8 +117,9 @@ def veros_operation():
     # id is capitalized in the csv and not in the json
     data = data.merge(tmp, how = "inner", on = "id")
     # want to select only US Cellular rows
-    data = data[data["customer"] == "US Cellular"]
+    data = data[data["customer"] == customer]
     export_comments(data)
+    return(data)
 
 def main():
     data = load_first_json()
@@ -144,5 +145,5 @@ def test_all():
 #### Driver Code ####
 #####################
 test_all()
-veros_operation()
+data = veros_operation(customer = "US Cellular")
 #main()
