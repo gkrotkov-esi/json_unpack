@@ -27,7 +27,9 @@ def get_extensions(dirpath = "data/parser_input"):
     files = os.listdir(dirpath)
     extensions = []
     for file in files:
-        extensions.append(file.split(".")[1])
+        # use -1 instead of 1 in case the user uses periods in their
+        # file name
+        extensions.append(file.split(".")[-1])
     return extensions
 
 # given a filepath, loads that file as a json into a pandas df
