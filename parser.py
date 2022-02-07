@@ -8,6 +8,7 @@ import os
 import sys
 import json
 import pandas as pd
+import numpy
 
 ##########################
 #### Helper Functions ####
@@ -35,9 +36,6 @@ def load_json(filepath):
 
 def load_csv(filepath):
     return pd.read_csv(filepath)
-
-# can adjust these to loop through all files in parser_input?
-
 
 # gets the first .json file in the input directory
 def load_first_json(dirpath = "data/parser_input"):
@@ -75,13 +73,23 @@ def get_columns(data, colnames):
 
 # wrapper function for pandas syntax, gets column names of a dataframe
 def get_colnames(data):
-    return list(data.columns)
+    return list(data.comments)
 
-def export(data, name = "output", target = None):
+# uses numpy to flatten a list
+def flatten(lst):
+    return list(numpy.concatenate(lst).flat)
+
+def export(data, name = "output", filetype = "csv", target = None):
     if (target == None):
-        target = f"data/parser_output/{name}.json"
-    data.to_json(target, orient = "records", 
-                 force_ascii = False, lines = True)
+        target = f"data/parser_output/{name}.{filetype}"
+    if (filetype == "json"):
+        data.to_json(target, orient = "records", 
+                     force_ascii = False, lines = True)
+        return
+    if (filetype == "csv"):
+        data.to_csv(target)
+        return
+    assert False, "unsupported file type in export fxn"
 
 # The user must define how many splits they want in the data. 
 # The program will evenly divide the number of json objects in the input file
@@ -99,15 +107,34 @@ def split_data(data, splits):
         tmp.to_json(target, orient = "records", 
                     force_ascii = False, lines = True)
 
+# to be applied to comment data
+# input "thread" is a list of dictionaries, where each dict is an email
+# fxn is destructive, returns None
+def trim_thread_comments(thread, mode = "body"):
+    for i in range(len(thread)):
+        thread[i] = thread[i][mode]
+
+# data - a pandas dataframe including a column titled "comments"
+# ASSUMPTION: comments is a pandas Series of threads, each thread being a 
+# list of emails, each represented as a dictionary
+# mode - the value in each dictionary we want to extract; usually "body"
+def trim_comments(data, mode = "body"):
+    comments = data.comments
+    comments.apply(trim_thread_comments, mode = mode)
+
 # splits should be the # of splits desired if provided
-def export_comments(data, splits = False):
+# if splits are desired, required output is json.
+def export_comments(data, filetype = "csv", splits = False):
     # select down the data to only these columns
     data = get_columns(data, ["id", "comments"])
+    trim_comments(data)
     if(splits):
         split_data(data, splits)
     else:
-        export(data, "comments")
+        export(data, "comments", filetype)
 
+# the merge is an inner join, so if a ticket exists in BOTH the .csv and the
+# .json, then its comments will be exported.
 def veros_operation(customer):
     data = load_first_json()
     tmp = load_first_csv()
@@ -137,9 +164,16 @@ def test_which():
     assert(which([1]) == [0])
     print("passed!")
 
+# checks to see whether all elements of the input list are dicts
+def all_dicts(lst):
+    lst = list(lst) # just in case a pandas series is input
+    print("Testing all_dicts ...", end = "")
+    for i in range(len(lst)):
+        assert(isinstance(lst[i], dict))
+    print("passed!")
+
 def test_all():
     test_which()
-
 
 #####################
 #### Driver Code ####
@@ -147,3 +181,11 @@ def test_all():
 test_all()
 data = veros_operation(customer = "US Cellular")
 #main()
+
+
+# TODO: implement filtering by date
+#    - which date?
+# TODO: implement removing rows where comments are void
+# TODO: should have option to export to csv instead of json
+#    - want to be able to export only body text
+# TODO (maybe): update load files to go through all files in parser_input?
