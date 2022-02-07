@@ -8,7 +8,7 @@ import os
 import sys
 import json
 import pandas as pd
-import numpy
+import numpy as np
 
 ##########################
 #### Helper Functions ####
@@ -75,13 +75,8 @@ def get_columns(data, colnames):
 def get_colnames(data):
     return list(data.comments)
 
-# uses numpy to flatten a list
-def flatten(lst):
-    return list(numpy.concatenate(lst).flat)
-
-def export(data, name = "output", filetype = "csv", target = None):
-    if (target == None):
-        target = f"data/parser_output/{name}.{filetype}"
+def export(data, name = "output", filetype = "csv"):
+    target = f"data/parser_output/{name}.{filetype}"
     if (filetype == "json"):
         data.to_json(target, orient = "records", 
                      force_ascii = False, lines = True)
@@ -124,18 +119,18 @@ def trim_comments(data, mode = "body"):
 
 # splits should be the # of splits desired if provided
 # if splits are desired, required output is json.
-def export_comments(data, filetype = "csv", splits = False):
+def export_comments(data, target = "comments", filetype = "csv", 
+                    splits = False):
     # select down the data to only these columns
     data = get_columns(data, ["id", "comments"])
-    trim_comments(data)
     if(splits):
         split_data(data, splits)
     else:
-        export(data, "comments", filetype)
+        export(data, name = target, filetype = filetype)
 
 # the merge is an inner join, so if a ticket exists in BOTH the .csv and the
-# .json, then its comments will be exported.
-def veros_operation(customer):
+# .json, then its comments will be represented.
+def load_merged_data(customer = ""):
     data = load_first_json()
     tmp = load_first_csv()
     tmp = tmp.rename(columns = {"Id": "id", "Customer [list]": "customer"})
@@ -143,10 +138,21 @@ def veros_operation(customer):
     # want to merge json and csv on id
     # id is capitalized in the csv and not in the json
     data = data.merge(tmp, how = "inner", on = "id")
-    # want to select only US Cellular rows
-    data = data[data["customer"] == customer]
-    export_comments(data)
+    # filter by customer if requested
+    if (customer != ""):
+        data = data[data["customer"] == customer]
     return(data)
+
+# uses numpy to flatten a list
+def flatten(lst):
+    return list(np.concatenate(lst).flat)
+
+def flatten_comments(data):
+    flattened = flatten(list(data.comments))
+    lengths = data.comments.apply(len)
+    idx = list(np.repeat(lengths.index, lengths.values))
+    result = pd.DataFrame(data = {"id": idx, "comments": flattened})
+    return result
 
 def main():
     data = load_first_json()
@@ -179,13 +185,17 @@ def test_all():
 #### Driver Code ####
 #####################
 test_all()
-data = veros_operation(customer = "US Cellular")
+data = load_merged_data(customer = "US Cellular")
+trim_comments(data)
+export_comments(data)
+# flatten comments, output again
+data = flatten_comments(data)
+export_comments(data, "flattened_emails")
 #main()
 
 
 # TODO: implement filtering by date
 #    - which date?
-# TODO: implement removing rows where comments are void
-# TODO: should have option to export to csv instead of json
-#    - want to be able to export only body text
-# TODO (maybe): update load files to go through all files in parser_input?
+#    - leave turned off
+# each row is an email
+# TODO: (maybe) update load files to go through all files in parser_input?
