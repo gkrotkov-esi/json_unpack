@@ -197,5 +197,4 @@ export_comments(data, "flattened_emails")
 # TODO: implement filtering by date
 #    - which date?
 #    - leave turned off
-# each row is an email
 # TODO: (maybe) update load files to go through all files in parser_input?
