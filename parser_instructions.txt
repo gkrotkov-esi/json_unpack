@@ -18,6 +18,9 @@ Requirements:
     "data/parser_input"
     - Place the csv zendesk export with everything but the comments into 
     "data/parser_input"
+    - There should be exactly 2 files in "data/parser_input", one a .json and 
+    one a .csv. The naming of those files does not matter except for the file
+    extension.
 
 Instructions to extract id and comments: 
 - Open "parser.py"

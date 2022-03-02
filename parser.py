@@ -2,7 +2,7 @@
 # Gabriel Krotkov
 # This script is intended to facilitate breaking .json files up into more 
 # managable chunks for another tool like R to import and analyze.
-# Last Update: 1/31/2022
+# Last Update: 3/2/2022
 
 import os
 import sys
@@ -10,9 +10,9 @@ import json
 import pandas as pd
 import numpy as np
 
-##########################
-#### Helper Functions ####
-##########################
+###########################
+#### Utility Functions ####
+###########################
 
 # Replicates the "which" inbuilt function from R
 def which(lst, condition = True):
@@ -39,21 +39,27 @@ def load_json(filepath):
 def load_csv(filepath):
     return pd.read_csv(filepath)
 
-# gets the first .json file in the input directory
-def load_first_json(dirpath = "data/parser_input"):
+# returns a JsonReader object for iteration
+# n - chunksize; the number of rows we want in each chunk
+def load_json_stream(filepath, n):
+    return pd.read_json(filepath, lines = True, chunksize = n)
+
+# dirpath - path to a directory
+# extension_type - "json" or "csv" (string)
+# n - the cardinal order of the filename we want to get
+def get_filepath_by_type(dirpath, extension_type, n = 0):
     extensions = get_extensions(dirpath)
     files = os.listdir(dirpath)
-    idx = which(extensions, "json")
-    filepath = dirpath + "/" + files[idx[0]]
-    return load_json(filepath)
+    idx = which(extensions, extension_type)
+    return dirpath + "/" + files[idx[n]]
+
+# gets the first .json file in the input directory
+def load_first_json(dirpath = "data/parser_input"):
+    return load_json(get_filepath_by_type(dirpath, "json", 0))
 
 # returns the first .csv file in the input directory
 def load_first_csv(dirpath = "data/parser_input"):
-    extensions = get_extensions(dirpath)
-    files = os.listdir(dirpath)
-    idx = which(extensions, "csv")
-    filepath = dirpath + "/" + files[idx[0]]
-    return load_csv(filepath)
+    return load_csv(get_filepath_by_type(dirpath, "csv", 0))
 
 # ASSUMPTION: directory has no directories
 def clear_dir(dir):
@@ -115,6 +121,7 @@ def trim_thread_comments(thread, mode = "body"):
 # ASSUMPTION: comments is a pandas Series of threads, each thread being a 
 # list of emails, each represented as a dictionary
 # mode - the value in each dictionary we want to extract; usually "body"
+# NOTE: this function is DESTRUCTIVE
 def trim_comments(data, mode = "body"):
     comments = data.comments
     comments.apply(trim_thread_comments, mode = mode)
@@ -134,12 +141,13 @@ def export_comments(data, target = "comments", filetype = "csv",
 # .json, then its comments will be represented.
 def load_merged_data(customer = ""):
     data = load_first_json()
-    tmp = load_first_csv()
-    tmp = tmp.rename(columns = {"Id": "id", "Customer [list]": "customer"})
-    tmp = get_columns(tmp, ["id", "customer"])
+    lookup = load_first_csv()
+    lookup = lookup.rename(columns = {"Id": "id", 
+                                      "Customer [list]": "customer"})
+    lookup = get_columns(lookup, ["id", "customer"])
     # want to merge json and csv on id
     # id is capitalized in the csv and not in the json
-    data = data.merge(tmp, how = "inner", on = "id")
+    data = data.merge(lookup, how = "inner", on = "id")
     # filter by customer if requested
     if (customer != ""):
         data = data[data["customer"] == customer]
@@ -156,9 +164,6 @@ def flatten_comments(data):
     result = pd.DataFrame(data = {"id": idx, "comments": flattened})
     return result
 
-def main():
-    data = load_first_json()
-    export_comments(data)
 
 ########################
 #### Test functions ####
@@ -183,20 +188,57 @@ def all_dicts(lst):
 def test_all():
     test_which()
 
+#############################
+#### Operation Functions ####
+#############################
+
+# will use camelCase for operation functions, snake_case for all other functions
+
+# reads in merged data (requires both json and csv) for a single customer
+# trims comments, exports in threaded format, flattens and exports unthreaded
+# assumes that data does not need to be read in chunks
+def singleCustomerReport(customer):
+    data = load_merged_data(customer = customer)
+    trim_comments(data)
+    export_comments(data)
+    data = flatten_comments(data)
+    export_comments(data, "flattened_emails")
+
+# for use when the json file is massive and requires a chunksize parameter
+# returns the data merged and filtered by customer
+# chunk - chunk of the large json file as read by a reader
+# lookup - csv file with id and customer information
+# customer - string value of the custumer we want to filter for
+def singleCustomerReportChunk(chunk, lookup, customer = ""):
+    data = chunk.merge(lookup, how = "inner", on = "id")
+    if (customer != ""):
+        data = data[data["customer"] == customer]
+    return(data)
+
+def singleCustomerReportChunks(customer, chunksize):
+    dirpath = get_filepath_by_type("data/parser_input", "json")
+    stream = load_json_stream(dirpath, chunksize)
+    lookup = load_first_csv()
+    lookup = lookup.rename(columns = {"Id": "id", "Customer [list]": "customer"})
+    lookup = get_columns(lookup, ["id", "customer"])
+    tickets = []
+    for chunk in stream:
+        tickets.append(singleCustomerReportChunk(chunk, lookup, customer))
+    # flatten tickets
+    tickets = pd.concat(tickets)
+    trim_comments(tickets)
+    export_comments(tickets)
+    tickets = flatten_comments(tickets)
+    export_comments(tickets, "flattened_emails")
+
+
+def main():
+    singleCustomerReportChunks(CUSTOMER_OF_INTEREST, CHUNKSIZE)
+
 #####################
 #### Driver Code ####
 #####################
 test_all()
-data = load_merged_data(customer = "US Cellular")
-trim_comments(data)
-export_comments(data)
-# flatten comments, output again
-data = flatten_comments(data)
-export_comments(data, "flattened_emails")
-#main()
-
-
-# TODO: implement filtering by date
-#    - which date?
-#    - leave turned off
-# TODO: (maybe) update load files to go through all files in parser_input?
+CUSTOMER_OF_INTEREST = "US Cellular"
+CHUNKSIZE = 1000
+main()
